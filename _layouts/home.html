@@ -5,31 +5,49 @@ layout: default
   <canvas id="hero-canvas" aria-hidden="true"></canvas>
   <h1>En Garde Data</h1>
   <p class="lead">Notes on LLM research, a RAG internship journal, and a portfolio of digital art & film.</p>
+  <div class="scroll-indicator" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 5V19M12 19L5 12M12 19L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
 </section>
 
-<section>
-  <h2>Latest posts</h2>
+<section class="content-section">
+  <div class="section-header">
+    <h2>Latest posts</h2>
+    <p class="section-subtitle">Thoughts on LLM research, RAG systems, and machine learning</p>
+  </div>
   <div class="grid">
     {% for post in site.posts limit:6 %}
       {% include post_card.html post=post %}
     {% endfor %}
   </div>
-  <p><a class="btn" href="{{ '/blog/' | relative_url }}">View all posts →</a></p>
+  <div class="section-cta">
+    <a class="btn" href="{{ '/blog/' | relative_url }}">View all posts →</a>
+  </div>
 </section>
 
-<section>
-  <h2>Portfolio</h2>
+<section class="content-section">
+  <div class="section-header">
+    <h2>Portfolio</h2>
+    <p class="section-subtitle">Digital art, film projects, and creative work</p>
+  </div>
   <div class="gallery">
     {% for item in site.portfolio limit:6 %}
       <a class="gallery-item" href="{{ item.url | relative_url }}">
-        {% if item.cover %}
-          <img src="{{ item.cover | relative_url }}" alt="{{ item.title }}" loading="lazy">
-        {% endif %}
+        <div class="gallery-item-image">
+          {% if item.cover %}
+            <img src="{{ item.cover | relative_url }}" alt="{{ item.title }}" loading="lazy">
+          {% endif %}
+          <div class="gallery-overlay"></div>
+        </div>
         <div class="caption">{{ item.title }}</div>
       </a>
     {% endfor %}
   </div>
-  <p><a class="btn" href="{{ '/portfolio/' | relative_url }}">View full portfolio →</a></p>
+  <div class="section-cta">
+    <a class="btn" href="{{ '/portfolio/' | relative_url }}">View full portfolio →</a>
+  </div>
 </section>
 <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
 <script src="{{ '/assets/js/three-hero.js' | relative_url }}"></script>

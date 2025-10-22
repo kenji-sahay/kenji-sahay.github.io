@@ -2,15 +2,24 @@
 layout: default
 ---
 <article class="post">
-  <h1>{{ page.title }}</h1>
-  <p class="muted">{{ page.date | date: '%B %d, %Y' }}</p>
-  {% include tag_badges.html %}
+  <header class="post-header">
+    <h1>{{ page.title }}</h1>
+    <div class="post-meta">
+      <span class="post-date">{{ page.date | date: '%B %d, %Y' }}</span>
+      {% assign words = content | number_of_words %}
+      {% assign reading_time = words | divided_by: 200 %}
+      {% if reading_time < 1 %}{% assign reading_time = 1 %}{% endif %}
+      <span class="post-reading-time">{{ reading_time }} min read</span>
+    </div>
+    {% include tag_badges.html %}
+  </header>
   {% if page.youtube_id %}
     {% include youtube.html id=page.youtube_id %}
   {% endif %}
   <div class="post-content">
     {{ content }}
   </div>
-  <hr>
-  <p class="small">Filed under: {% for t in page.tags %}<a href="{{ '/blog/?tag=' | relative_url }}{{ t | url_encode }}">#{{ t }}</a>{% unless forloop.last %}, {% endunless %}{% endfor %}</p>
+  <footer class="post-footer">
+    <p class="small muted">Filed under: {% for t in page.tags %}<a href="{{ '/blog/?tag=' | relative_url }}{{ t | url_encode }}">#{{ t }}</a>{% unless forloop.last %}, {% endunless %}{% endfor %}</p>
+  </footer>
 </article>
