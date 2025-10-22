@@ -49,3 +49,29 @@
   }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
   els.forEach(el=> io.observe(el));
 })();
+(function(){
+  const progressBar = document.getElementById('scroll-progress');
+  if(!progressBar) return;
+  const updateProgress = () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const progress = (scrollTop / scrollHeight) * 100;
+    progressBar.style.width = progress + '%';
+  };
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress, { passive: true });
+  updateProgress();
+})();
+(function(){
+  // Set active navigation link
+  const navLinks = document.querySelectorAll('.nav a[href]');
+  const currentPath = window.location.pathname;
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    // Exact match or if it's a section page (blog, portfolio, about, contact)
+    if (href === currentPath ||
+        (currentPath.startsWith(href) && href !== '/' && href.length > 1)) {
+      link.classList.add('active');
+    }
+  });
+})();
