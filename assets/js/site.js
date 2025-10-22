@@ -1,8 +1,20 @@
 (function(){
   const root = document.documentElement;
   function setTheme(mode){
-    if(mode === 'dark'){ root.classList.add('dark'); localStorage.setItem('theme','dark'); }
-    else { root.classList.remove('dark'); localStorage.setItem('theme','light'); }
+    if(mode === 'dark'){
+      root.classList.add('dark');
+      localStorage.setItem('theme','dark');
+      // Update theme-color for mobile browsers
+      var metaTheme = document.querySelector('meta[name="theme-color"]');
+      if(metaTheme) metaTheme.content = '#0a0f17';
+    }
+    else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme','light');
+      // Update theme-color for mobile browsers
+      var metaTheme = document.querySelector('meta[name="theme-color"]');
+      if(metaTheme) metaTheme.content = '#ffffff';
+    }
   }
   window.__toggleTheme = function(){
     const isDark = root.classList.contains('dark');
