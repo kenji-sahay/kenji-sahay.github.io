@@ -18,6 +18,12 @@
     meta.name = 'color-scheme';
     meta.content = 'light dark';
     document.head.appendChild(meta);
+
+    // Set theme-color for mobile browsers
+    var themeColor = document.createElement('meta');
+    themeColor.name = 'theme-color';
+    themeColor.content = useDark ? '#0a0f17' : '#ffffff';
+    document.head.appendChild(themeColor);
   } catch (e) {}
 })();
 </script>
@@ -29,4 +35,3 @@
 {% seo %}
 <link rel="icon" href="{{ '/images/logo.svg' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
