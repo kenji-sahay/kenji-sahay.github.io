@@ -6,7 +6,7 @@ export interface BlogPost {
   date: string;
   tags: string[];
   readTime: string;
-  coverImage: string;
+  coverImage?: string;
 }
 
 export interface PortfolioItem {

@@ -59,12 +59,6 @@ const BlogPost: React.FC = () => {
           </div>
         </header>
 
-        {/* Cover Image */}
-        <div className="aspect-video w-full rounded-2xl overflow-hidden mb-10 bg-slate-800 border border-white/5 shadow-2xl relative group">
-          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" />
-        </div>
-
         {/* Content */}
         <div className="prose-custom">
           <ReactMarkdown 
