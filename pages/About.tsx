@@ -20,7 +20,7 @@ const About: React.FC = () => {
 
           {/* Content */}
           <div className="w-full md:w-2/3">
-            <h1 className="text-4xl font-bold text-white mb-4">Hello, I'm En Garde.</h1>
+            <h1 className="text-4xl font-bold text-white mb-4">Hello, I'm Kenji Sahay.</h1>
             <h2 className="text-xl text-brand-primary font-mono mb-8">Data Scientist & Creative Developer</h2>
             
             <div className="prose-custom text-lg text-gray-300 space-y-6">
@@ -31,8 +31,8 @@ const About: React.FC = () => {
               </p>
               
               <p>
-                When I'm not fine-tuning embeddings or wrestling with CUDA drivers, I am an aspiring digital artist. 
-                I use tools like <strong>Blender</strong>, <strong>Three.js</strong>, and <strong>Unreal Engine</strong> to create 
+                When I'm not doing LLM research or studying for school, I am an aspiring digital artist. 
+                I use tools like <strong>Blender</strong>, <strong>Adobe After Effects</strong>, and <strong>Photoshop</strong> to create 
                 immersive visual experiences.
               </p>
 
@@ -41,9 +41,9 @@ const About: React.FC = () => {
                 <div>
                   <h4 className="font-mono text-brand-glow mb-2">Data & AI</h4>
                   <ul className="list-disc list-inside text-sm space-y-1 text-gray-400">
-                    <li>Python (PyTorch, TensorFlow)</li>
+                    <li>Python (PyTorch)</li>
                     <li>Vector DBs (Pinecone, Milvus)</li>
-                    <li>LLM Ops (LangChain, Gemini API)</li>
+                    <li>LLM Ops (OpenAI API, Gemini API)</li>
                     <li>Data Engineering (SQL, Spark)</li>
                   </ul>
                 </div>
@@ -61,9 +61,9 @@ const About: React.FC = () => {
             
             <div className="mt-12 p-6 bg-slate-900 border border-white/10 rounded-xl">
                <h3 className="text-xl font-bold text-white mb-2">Get in Touch</h3>
-               <p className="text-gray-400 mb-4">Open for collaborations on AI-driven web apps or creative coding projects.</p>
-               <a href="mailto:contact@engarde.data" className="inline-flex items-center text-brand-primary hover:text-white font-bold transition-colors">
-                 <Mail size={18} className="mr-2" /> contact@engarde.data
+               <p className="text-gray-400 mb-4">Open for collaborations on LLM/ML research or digital art (film, graphic design, etc).</p>
+               <a href="mailto:kenjisahay26@gmail.com" className="inline-flex items-center text-brand-primary hover:text-white font-bold transition-colors">
+                 <Mail size={18} className="mr-2" /> kenjisahay26@gmail.com
                </a>
             </div>
           </div>
