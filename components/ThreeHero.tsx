@@ -1,20 +1,6 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-
-// Add type definitions for R3F elements to satisfy TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      group: any;
-      points: any;
-      bufferGeometry: any;
-      bufferAttribute: any;
-      pointsMaterial: any;
-      ambientLight: any;
-    }
-  }
-}
 
 function ParticleField() {
   const ref = useRef<THREE.Points>(null!);
@@ -52,7 +38,6 @@ function ParticleField() {
     ref.current.rotation.y = time * 0.05;
     ref.current.rotation.x = Math.sin(time * 0.1) * 0.1;
 
-    // We must cast to BufferAttribute to access 'array' and 'needsUpdate' safely in TS
     const geometry = ref.current.geometry;
     if (!geometry) return;
     
@@ -120,15 +105,39 @@ function ParticleField() {
   );
 }
 
+// Fallback component when WebGL fails or is loading
+const HeroFallback: React.FC = () => (
+  <div className="absolute inset-0 bg-gradient-to-b from-brand-dark to-slate-900" />
+);
+
 const ThreeHero: React.FC = () => {
+  const [webGLSupported, setWebGLSupported] = React.useState(true);
+
+  React.useEffect(() => {
+    // Check WebGL support
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        setWebGLSupported(false);
+      }
+    } catch (e) {
+      setWebGLSupported(false);
+    }
+  }, []);
+
   return (
     <div className="h-[60vh] w-full bg-gradient-to-b from-brand-dark to-slate-900 relative overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
-          <ambientLight intensity={0.5} />
-          <ParticleField />
-        </Canvas>
-      </div>
+      {webGLSupported && (
+        <div className="absolute inset-0 z-0">
+          <Suspense fallback={<HeroFallback />}>
+            <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
+              <ambientLight intensity={0.5} />
+              <ParticleField />
+            </Canvas>
+          </Suspense>
+        </div>
+      )}
       
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
         <div className="bg-black/20 backdrop-blur-sm p-8 rounded-3xl border border-white/5 shadow-2xl">
@@ -141,7 +150,7 @@ const ThreeHero: React.FC = () => {
         </div>
       </div>
       
-      {/* Scroll Indicator - Centered with Flexbox to prevent transform conflict with animation */}
+      {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-0 w-full flex justify-center z-20 pointer-events-none">
         <div className="animate-float text-brand-primary/70 flex flex-col items-center gap-2">
           <span className="text-xs font-mono uppercase tracking-widest">Scroll to Explore</span>
