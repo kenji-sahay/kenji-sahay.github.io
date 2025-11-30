@@ -72,7 +72,7 @@ const BlogPost: React.FC = () => {
         {/* Footer of Post */}
         <div className="mt-16 pt-8 border-t border-white/10 text-center">
           <h3 className="text-white font-semibold mb-2">Enjoyed this read?</h3>
-          <p className="text-gray-400 text-sm mb-6">Check out the portfolio to see these concepts in action.</p>
+          <p className="text-gray-400 text-sm mb-6">Check out some of my creative work/art on my portfolio.</p>
           <Link to="/portfolio" className="inline-block px-6 py-3 bg-brand-primary text-white rounded-lg hover:bg-blue-600 transition-all font-medium shadow-lg shadow-brand-primary/25">
             View Portfolio
           </Link>
