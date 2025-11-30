@@ -4,12 +4,16 @@ import * as THREE from 'three';
 
 function ParticleField() {
   const ref = useRef<THREE.Points>(null!);
-  const mouse = useRef({ x: 0, y: 0 });
-  const mouseWorld = useRef(new THREE.Vector3());
-  const mouseLocal = useRef(new THREE.Vector3());
-  const inverseMatrix = useRef(new THREE.Matrix4());
+  const mouse = useRef({ x: 0, y: 0, active: false });
   const { camera, gl } = useThree();
   const particleCount = 1200;
+  
+  // Reusable vectors to avoid garbage collection
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), []);
+  const intersectPoint = useMemo(() => new THREE.Vector3(), []);
+  const localPoint = useMemo(() => new THREE.Vector3(), []);
+  const mouseVec2 = useMemo(() => new THREE.Vector2(), []);
 
   // Set up mouse tracking
   useEffect(() => {
@@ -19,11 +23,11 @@ function ParticleField() {
       const rect = canvas.getBoundingClientRect();
       mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse.current.active = true;
     };
 
     const handleMouseLeave = () => {
-      mouse.current.x = 0;
-      mouse.current.y = 0;
+      mouse.current.active = false;
     };
 
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -76,26 +80,32 @@ function ParticleField() {
 
     const positionsArray = positionAttribute.array as Float32Array;
     
-    // Unproject mouse to 3D world space at z=0 plane
-    mouseWorld.current.set(mouse.current.x, mouse.current.y, 0.5);
-    mouseWorld.current.unproject(camera);
+    // Calculate mouse position in local particle space
+    let localMouseX = 0;
+    let localMouseY = 0;
+    let localMouseZ = 0;
+    let hasValidMouse = false;
     
-    // Get direction from camera to unprojected point
-    const dir = mouseWorld.current.sub(camera.position).normalize();
-    
-    // Find intersection with z=0 plane (approximate center of particle sphere)
-    const distance = -camera.position.z / dir.z;
-    mouseWorld.current.copy(camera.position).add(dir.multiplyScalar(distance));
-    
-    // Transform mouse position to LOCAL space of the rotating particle group
-    // This is the key fix - we need to account for the rotation
-    ref.current.updateMatrixWorld();
-    inverseMatrix.current.copy(ref.current.matrixWorld).invert();
-    mouseLocal.current.copy(mouseWorld.current).applyMatrix4(inverseMatrix.current);
-
-    const localMouseX = mouseLocal.current.x;
-    const localMouseY = mouseLocal.current.y;
-    const localMouseZ = mouseLocal.current.z;
+    if (mouse.current.active) {
+      // Cast ray from camera through mouse position
+      mouseVec2.set(mouse.current.x, mouse.current.y);
+      raycaster.setFromCamera(mouseVec2, camera);
+      
+      // Find intersection with z=0 plane
+      const intersects = raycaster.ray.intersectPlane(plane, intersectPoint);
+      
+      if (intersects) {
+        // Transform world point to local space of the rotating particles
+        ref.current.updateMatrixWorld();
+        localPoint.copy(intersectPoint);
+        ref.current.worldToLocal(localPoint);
+        
+        localMouseX = localPoint.x;
+        localMouseY = localPoint.y;
+        localMouseZ = localPoint.z;
+        hasValidMouse = true;
+      }
+    }
 
     for (let i = 0; i < particleCount; i++) {
       const ix = i * 3;
@@ -109,21 +119,31 @@ function ParticleField() {
       const waveX = Math.sin(time * 0.5 + oy * 0.5) * 0.2;
       const waveY = Math.cos(time * 0.3 + ox * 0.5) * 0.2;
       
-      // Calculate 3D distance from mouse in LOCAL space
-      const dx = positionsArray[ix] - localMouseX;
-      const dy = positionsArray[iy] - localMouseY;
-      const dz = positionsArray[iz] - localMouseZ;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      let forceX = 0;
+      let forceY = 0;
+      let forceZ = 0;
       
-      // Repulsion force - particles push away from cursor in 3D
-      const force = Math.max(0, 3 - dist) * 0.6;
+      if (hasValidMouse) {
+        // Calculate 3D distance from mouse in LOCAL space
+        const dx = positionsArray[ix] - localMouseX;
+        const dy = positionsArray[iy] - localMouseY;
+        const dz = positionsArray[iz] - localMouseZ;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        
+        // Repulsion force
+        const strength = Math.max(0, 3 - dist) * 0.5;
+        
+        if (dist > 0.001 && strength > 0) {
+          const invDist = 1 / dist;
+          forceX = dx * invDist * strength;
+          forceY = dy * invDist * strength;
+          forceZ = dz * invDist * strength;
+        }
+      }
       
-      // Normalize direction and apply force
-      const invDist = dist > 0.001 ? 1 / dist : 0;
-      
-      const targetX = ox + waveX + (dx * invDist * force);
-      const targetY = oy + waveY + (dy * invDist * force);
-      const targetZ = oz + (dz * invDist * force);
+      const targetX = ox + waveX + forceX;
+      const targetY = oy + waveY + forceY;
+      const targetZ = oz + forceZ;
 
       // Smooth interpolation
       positionsArray[ix] += (targetX - positionsArray[ix]) * 0.08;
