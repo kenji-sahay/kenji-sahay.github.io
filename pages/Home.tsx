@@ -19,7 +19,7 @@ const Home: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
           <div>
             <h2 className="text-3xl font-bold text-white mb-2 border-l-4 border-brand-primary pl-4">Latest Research</h2>
-            <p className="text-gray-400 pl-5">Notes from the field on RAG, LLMs, and Data Engineering.</p>
+            <p className="text-gray-400 pl-5">Notes from the field on LLMs, ML, and Data Engineering.</p>
           </div>
           <Link to="/blog" className="hidden sm:flex items-center text-brand-primary hover:text-brand-glow transition-colors font-mono">
             View Archive <ArrowRight size={16} className="ml-2" />
@@ -46,7 +46,7 @@ const Home: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
             <div>
               <h2 className="text-3xl font-bold text-white mb-2 border-l-4 border-brand-accent pl-4">Creative Output</h2>
-              <p className="text-gray-400 pl-5">Where code meets canvas. 3D renders and generative art.</p>
+              <p className="text-gray-400 pl-5">Creative Works</p>
             </div>
              <Link to="/portfolio" className="hidden sm:flex items-center text-brand-primary hover:text-brand-glow transition-colors font-mono">
               View Gallery <ArrowRight size={16} className="ml-2" />
