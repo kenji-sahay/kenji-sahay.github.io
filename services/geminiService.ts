@@ -1,9 +1,23 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { BLOG_POSTS, PORTFOLIO_ITEMS } from "../constants";
 
-// Initialize the client. 
-// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy initialization to prevent crash if API key is missing
+let ai: GoogleGenAI | null = null;
+
+function getAI(): GoogleGenAI | null {
+  if (!process.env.API_KEY) {
+    return null;
+  }
+  if (!ai) {
+    try {
+      ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    } catch (e) {
+      console.error('Failed to initialize GoogleGenAI:', e);
+      return null;
+    }
+  }
+  return ai;
+}
 
 const SYSTEM_INSTRUCTION = `
 You are the AI assistant for a website called "En Garde Data".
@@ -22,13 +36,15 @@ If the user asks about something not on the website, politely steer them back to
 `;
 
 export const streamChatResponse = async function* (userMessage: string) {
-  if (!process.env.API_KEY) {
-    yield { text: "API Key is missing. Please configure process.env.API_KEY to use the AI assistant." } as GenerateContentResponse;
+  const client = getAI();
+  
+  if (!client) {
+    yield { text: "AI chat is currently unavailable. The API key is not configured." } as GenerateContentResponse;
     return;
   }
 
   try {
-    const responseStream = await ai.models.generateContentStream({
+    const responseStream = await client.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents: userMessage,
       config: {
