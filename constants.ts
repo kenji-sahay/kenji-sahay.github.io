@@ -690,9 +690,9 @@ Examples:
 
 Reading Liu et al.'s paper made me realize how important it is to define the specific type of hallucination that COMPASS is resolving:
 
-✅ **We are resolving:** Contextual Faithfulness Errors (Type 1)
+**We are resolving:** Contextual Faithfulness Errors (Type 1)
 
-❌ **We are NOT resolving:** Type 2, 3, 4
+**We are NOT resolving:** Type 2, 3, 4
 <br><br>
 
 This will help us avoid making unsubstantiated claims regarding the scope of our paper. We are NOT saying we are resolving "all hallucinations", we are specifically resolving context grounding failures.
