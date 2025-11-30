@@ -117,6 +117,632 @@ For our approach we decided to take this a step further. We are going to develop
 4.  **Lightweight**: It should be practical enough to actually deploy
 `
   },
+  {
+  id: 'lookback-lens-paper-analysis',
+  title: 'The Lookback Lens Paper: Hallucination Detection',
+  excerpt: 'Three readings of the Lookback Lens paper taught me that the simplest signals—attention patterns—can solve complex problems like hallucination detection.',
+  date: '2025-06-12',
+  readTime: '15 min read',
+  tags: ['Lookback Lens', 'Attention Mechanisms', 'Paper Review', 'Hallucination Detection'],
+  content: `
+# The Lookback Lens Paper: Hallucination Detection
+
+**Date:** June 12, 2025  
+**Status:** Week 1 - Deep paper analysis
+<br><br>
+
+## Three Readings And A Breakthrough
+
+By now I have read the Lookback Lens paper (Chuang et al., 2024, EMNLP) three times. My first reading of the paper was confusing. The second reading left me saying, "I think I finally understand!" But, after my third reading this morning I thought to myself, "Wow, this is truly brilliant." In order to explain why this paper was a major guidepost for us throughout the entire project, let me describe the problem they addressed and how they did it.
+<br><br>
+
+## The Problem They Addressed
+
+Here's how they set-up the problem: You give an LLM a document and ask it to summarize the document or answer some questions based upon the document. The model has access to all the relevant information within the document. However, even though the model has access to all of the necessary information, it still may create false information. It is what they refer to as contextual hallucinations.
+<br><br>
+
+As an example, their paper shows an instance where LLaMA-2-7B-Chat was given a document about Beyoncé and was asked to provide a summary of the document. The document explicitly stated that Beyoncé had made $100 million dollars. The model produced the following statement regarding her earnings: "earning an estimated $100m (£64m) in the last year" and where the "£64m" does not exist in the source document.
+<br><br>
+
+The model literally created the British pound conversion, a clear case of hallucinating information.
+<br><br>
+
+## Key Insights: The Attention Mechanisms Tell The Story
+
+Here's what makes this paper so elegant: they don't look at what the model says, they look at what the model is paying attention to.
+<br><br>
+
+All transformer models utilize attention mechanisms. At each step when generating a token, the model determines how much to "pay attention to," in relation to the input, as follows:
+
+- The original context (the article/document)
+- The question (if there is a question)
+- Its own previously generated output (what it just generated)
+<br><br>
+
+The Lookback Lens hypothesis is simply beautiful in its elegance:
+<br><br>
+
+**When a model generates false information, the model pays less attention to the original context and more to its own generated output.**
+<br><br>
+
+In other words, the model is like a student that is supposed to properly cite his/her sources when writing an essay, however, instead of doing that, he/she is simply generating false information from memory. He/she is no longer "looking back" at the source documents.
+<br><br>
+
+## Making This Hypothesis Quantifiable: The Lookback Ratio
+
+Now we're getting into some technical detail, but bear with me here since this is important.
+<br><br>
+
+At each generation step and for each attention head (LLaMA-2-7B has 32 layers × 32 heads = 1,024 total attention heads), they calculate the following:
+<br><br>
+
+\`\`\`
+Lookback Ratio = context_attention / (context_attention + generated_attention)
+\`\`\`
+<br><br>
+
+Where:
+
+- context_attention = average attention weight for the original prompt tokens
+- generated_attention = average attention weight for the newly generated tokens
+<br><br>
+
+The ratio is bounded between 0 and 1:
+
+- LR ≈ 1.0: Model is primarily focused on the context (good!)
+- LR ≈ 0.0: Model is primarily focused on its own generated output (bad!)
+- LR ≈ 0.5: Equal attention being paid to both context and generated output
+<br><br>
+
+The brilliance behind their method is that they compute this for every head and every generation step, providing them with a wealth of knowledge about the behavior of the model.
+<br><br>
+
+## From Detection To Classification
+
+They do not just compute these ratios; rather, they use them as features for a classifier.
+<br><br>
+
+For a range of text (e.g., a single sentence in a summary), they:
+
+1. Calculate the Lookback Ratios for all 1,024 heads
+2. Compute the average of those ratios over the span of tokens for the range of text
+3. Use the resulting 1,024 dimensional vector as input to a simple logistic regression classifier
+<br><br>
+
+That's it. No complex neural networks, no sophisticated architectures. Just a simple linear classifier examining the patterns of attention in the model.
+<br><br>
+
+**Results?**
+<br><br>
+
+AUROC of 85-91% for detecting hallucinations across multiple tasks. That's competitive with or better than:
+
+- Text-based NLI models trained on 731k examples
+- Hidden state-based detectors that use the model's internal representation
+- Much more complex approaches
+<br><br>
+
+## Why Does This Matter (and Why Are We So Excited)?
+
+There are three things that make this approach unique:
+<br><br>
+
+### 1. Interpretability
+
+You can see exactly what's going on. If the model is hallucinating, you can visually inspect which heads are not focusing on the context. It is not a black-box system.
+<br><br>
+
+The authors of the paper demonstrate this nice visualization (Figure 5 in their appendix) showing that the positive heads (heads that are positively correlated with factuality) show significantly lower Lookback Ratios during hallucinated text. In essence, you can literally observe the model stop paying attention to the source.
+<br><br>
+
+### 2. Transferability
+
+They trained a detector using CNN/DM summarization data and it performed well on:
+
+- XSum (summarization data, different dataset): 9.6% hallucination rate decrease
+- Natural Questions (entirely different task - QA): 3% increase in performance
+<br><br>
+
+Even transferred across model size (7B -> 13B) without requiring retraining!
+<br><br>
+
+This is massive. Most machine learning methods fail when you move across different domains. It appears that the attention mechanism is more fundamental.
+<br><br>
+
+### 3. Lightweight
+
+The feature sets are merely 1,024 numbers (one number for each head). Compare that to:
+
+- Hidden States: 4,096 dimensions per layer
+- Model Outputs: Entire vocabulary (32k+ tokens)
+<br><br>
+
+Less Feature Space = Faster Inference, Less Overfitting, Easier to Work With
+<br><br>
+
+## Guided Decoding Method
+
+The authors did not simply stop at detecting hallucinations; they developed a method called "Lookback Lens Guided Decoding" to avoid hallucinations.
+<br><br>
+
+The idea: at each generation step, sample multiple candidate chunks (8 candidates, each 8 tokens long), compute their lookback ratios, run them through the classifier, and pick the candidate with the lowest hallucination probability.
+<br><br>
+
+In other words, the authors propose a mechanism that provides guidance such that the model says, "Of the eight possible continuations you could make, three and seven seem to be diverging from the source information. Why don't we continue with one?"
+<br><br>
+
+As a result, the authors were able to reduce the number of hallucinated examples on XSum by 18.8%. The number of hallucinated examples went from 510 out of 1000 to 414.
+<br><br>
+
+## Limitations of the Authors' Work (Where We Can Enter the Picture)
+
+The work presented in the Lookback Lens paper is excellent, but it has several shortcomings:
+<br><br>
+
+### 1. Costly Decoding
+
+The authors have to sample 8 candidates and evaluate all of them. This results in an 8x increase in inference costs. An 8x increase in inference costs would be unsustainable for many real-time applications.
+<br><br>
+
+What if we could modulate attention during a single generation pass instead?
+<br><br>
+
+### 2. Detection vs. Prevention
+
+The authors detect hallucinations and then choose among candidates. However, could we guide the model's attention proactively so as to prevent hallucinations before they occur?
+<br><br>
+
+### 3. Static Scaling
+
+The authors scale their approach statically. Could we allow the model to adjust its level of intervention on the fly based on how well the generation process is proceeding?
+<br><br>
+
+### 4. Problems With The Lookback Ratio
+
+The authors found problems with the numerical stability of the ratio when the denominator is small. We are considering converting the ratio to logits (our Context Reliance Score), which may provide better gradients and be more sensitive to differences.
+<br><br>
+
+## Our Research Questions (Updated)
+
+We now wish to investigate the following questions after learning about the research done in the Lookback Lens paper:
+<br><br>
+
+**Detection Phase (Validation of Their Results):**
+
+- Are we able to duplicate the ~85% AUROC on our own data sets that the authors obtained?
+- Do the transformations to logits (CRS) enhance the performance of the classifiers?
+- What additional characteristics beyond the lookback ratio assist?
+<br><br>
+
+**Intervention Phase (New Contributions):**
+
+- Are we able to dynamically modify attention heads during generation?
+- Can we employ CRS as a real-time feedback signal for a control system?
+- Can we achieve a reduction in hallucinations comparable to or better than that achieved using single-pass generation?
+<br><br>
+
+## The Numbers That Inspire Me
+
+According to their Table 1, LLaMA-2-7B-Chat achieves only 49.6 percent of CNN/DM summary correctness and 67.8 percent of NQ question-answer correctness when assessing for factual correctness. This indicates that:
+
+- 50 percent of summaries contain hallucinations
+- 32 percent of question-answer responses are incorrect
+<br><br>
+
+And these statistics are with the correct context supplied! The model literally has the answer, yet it still produces incorrect results!
+<br><br>
+
+Therefore, if we could merely decrease these statistics by 10–20 percent, we will be achieving significant outcomes. Medical summaries, legal documents, customer service, wherever factual correctness matters.
+<br><br>
+
+## Things I'm Still Struggling to Understand
+
+Honestly, I am still trying to wrap my mind around certain aspects of the paper:
+<br><br>
+
+**Why do certain attention heads exhibit negative correlations with factual correctness?** The authors speculate that "negative heads" represent attention heads whose lower lookback ratios correspond to higher factual correctness. Intuitively, I believe that examining context should always be beneficial, however, according to the authors, this is more complex. The authors suggest that negative heads ensure consistency in the generated output itself.
+<br><br>
+
+**How do they determine which heads to utilize?** According to the authors, the top-K selections in their guided decoding, however, they utilized all 1,024 heads for the classifier. We may need to become more selective for our real-time interventions.
+<br><br>
+
+**What occurs in various layers?** The authors discovered that the intermediate layers (layers 13–20 in their 32 layer model) are the most predictive. However, why? Is that where the model makes "decisions" about context versus memory?
+<br><br>
+
+## Next Steps for Our Project
+
+For the next week, I will be:
+
+- **Reproducing their detection results** — Coding the lookback ratio extraction, training a logistic regression classifier on our own data
+- **Implementing CRS** — Converting the lookback ratio to logit space and comparing the classifier performance
+- **Visualizing Attention Patterns** — I want to see what happens when models hallucinate
+- **Thinking about control theory** — If CRS is our sensor, what is our actuator? How do we alter the attention during generation?
+<br><br>
+
+## The Bigger Picture
+
+What I love about this paper is that it takes a complex problem (hallucinations) and finds a surprisingly simple signal (attention patterns) that actually works.
+<br><br>
+
+Of course hallucinations are related to attention! The model stops looking at the source material. But no one had really exploited this systematically for both detection and mitigation until Lookback Lens.
+<br><br>
+
+Chuang et al. gave us the foundation. Now we're trying to build something new on top of it.
+
+---
+
+**Paper Reference:** Chuang, Y.-S., Qiu, L., Hsieh, C.-Y., Krishna, R., Kim, Y., & Glass, J. (2024). Lookback Lens: Detecting and Mitigating Contextual Hallucinations in Large Language Models Using Only Attention Maps. *Findings of EMNLP 2024*.
+  `
+},
+{
+  id: 'why-models-hallucinate',
+  title: 'A Question That Stuck With Me All Night',
+  excerpt: 'Why do models hallucinate in the first place? Five papers helped me understand the layers of this problem—from training paradoxes to decision mechanisms.',
+  date: '2025-06-19',
+  readTime: '18 min read',
+  tags: ['Hallucinations', 'Context-Parametric Inversion', 'Paper Review', 'Research Synthesis'],
+  content: `
+# A Question That Stuck With Me All Night
+
+Over the past week I have been buried in the Lookback Lens paper, and the one thing I could not stop thinking about was this larger question: Why do models hallucinate in the first place?
+<br><br>
+
+Think about it; you are giving the model the exact information that it needs. The answer to the question is literally there in the context. Yet the model with complete confidence creates something entirely incorrect. Hallucinations are not simply random errors, but rather, they are systemic. The model has made the conscious decision to disregard the context that you supplied.
+<br><br>
+
+During my exploration of this question, I read five papers that all addressed various parts of the problem. At the conclusion of the week, each paper added a layer of complexity to the problem. By the end of the week, I had developed a far greater understanding of what we are attempting to resolve.
+<br><br>
+
+## Paper 1: The Training Paradox (Goyal et al., 2025)
+
+**"Context-Parametric Inversion: Why Instruction Fine-Tuning Can Worsen Context Reliance."**
+<br><br>
+
+This paper transformed everything for me.
+<br><br>
+
+### The Main Finding
+
+Although instruction fine-tuning (IFT) seems to help early on for models to follow context, eventually the models will revert back to disregarding context — while continuing to get better on the traditional benchmarks.
+<br><br>
+
+Let me break down that statement because it is a little crazy:
+
+- **Initial phase of training:** Models begin to focus on the context
+- **Peak phase of training:** Models reach their highest point of adhering to context
+- **Final phase of training:** Models choose to rely on memorization of information versus the context that was provided
+- **Benchmark results continue to grow throughout the entire process!**
+<br><br>
+
+Goyal et al. term this phenomenon **Context-Parametric Inversion (CPI)**.
+<br><br>
+
+### The "Lazy Good Student" Analogy
+
+Yesterday I spent all day explaining CPI to Anna, and I believe I finally came up with a good analogy:
+<br><br>
+
+Think of a student who:
+
+- **First part of the semester:** Reads all of the course material, checks the answers against the resources that were given to them
+- **Middle part of the semester:** Has done well on the exams, however is starting to rely on the things he or she remembers from class more and more
+- **End of the semester:** Has received a better grade than ever before on the exams, however, no longer uses the readings — even though the reading can be used to find the answer if it is open book and the answer is clearly stated
+<br><br>
+
+The student's grades on the exams continue to go up (traditional benchmarks); however, the student is no longer using the materials (the context). The student has figured out the patterns of how answers appear to be; however, the student has lost the discipline of making sure that answers are based on evidence.
+<br><br>
+
+That is CPI.
+<br><br>
+
+### Explaining the Training Process
+
+Here is why CPI occurs:
+<br><br>
+
+**Phase 1: Critical Contextual Learning (Early Training)**
+
+- The model encounters instances where the context contains unique and critical information
+- High loss → strong gradient signal: "Pay attention to the context!"
+- Result: Rapid improvement in context-adherence
+<br><br>
+
+**Phase 2: Pattern-Matching Dominance (Mid Training)**
+
+- As the loss on contextual learning examples decreases, these examples produce smaller gradient signals
+- Training data is primarily comprised of examples that work just fine with pattern-matching
+- The model learns "shortcuts" that don't require careful reading
+- Result: Plateau in context-adherence
+<br><br>
+
+**Phase 3: Context-Parametric Inversion (Late Training)**
+
+- The model has internalized powerful patterns from the majority of non-context-critical examples
+- When the model is presented with a context that conflicts with its memorized patterns, the model chooses to default to the memorized patterns
+- Loss continues to fall (the vast majority of examples do not require context)
+- Result: Degradation in context-adherence, even as benchmark performance continues to increase
+<br><br>
+
+### Damaging Experiments
+
+To demonstrate CPI, the authors created synthetic QA pairs which contained:
+
+- **Question:** "What is the capital of France?"
+- **Context:** "The capital of France is Berlin" (Counterfactual)
+- **Correct answer according to context:** "Berlin"
+<br><br>
+
+What occurred to the model during training?
+
+| Training Stage | Context Adherence | Standard Benchmark |
+|----------------|-------------------|-------------------|
+| Early IFT | 78% (Follows Context) | 65% |
+| Mid IFT | 82% (Highest Peak Adherence) | 74% |
+| Late IFT | 53% (Onset of CPI) | 81% |
+| After IFT | 41% (Full Inversion) | 85% |
+<br><br>
+
+In the final stages of training, the model was able to achieve a high level of performance (85%) on the benchmark; however, the model was only adhering to the context at a rate of 41%. The model "knew" that the capital of France was Paris, therefore it chose to disregard the contradictory evidence provided by the context.
+<br><br>
+
+This is precisely the type of hallucination that we are trying to get rid of.
+<br><br>
+
+## Paper 2: The Decision Mechanism (Cheng et al., 2025)
+
+**"The Interplay Between Parametric And Contextual Knowledge In Large Language Models"**
+<br><br>
+
+Since I read about CPI, I was curious to know: how does the model make the decision whether to use context and/or memory?
+<br><br>
+
+Cheng et al. investigated this empirically.
+<br><br>
+
+### Important Findings: Suppression Instead of Integration
+
+That is what I found surprising: When the context provides valuable information for the model, it does not combine them - it suppresses the one or the other.
+<br><br>
+
+Therefore, the decision mechanism of the model is:
+
+1. The model meets a query
+2. Activates both contextual and parametric knowledge pathways
+3. One pathway "wins" and suppresses the other
+4. Winner takes all: the output will represent the winner of the two competing pathways
+<br><br>
+
+This is why hallucinations occur in such a binary manner; the model is not "using context partially", it uses context completely or not at all.
+<br><br>
+
+### Contextual Signals
+
+Cheng et al. determined which contextual signals indicate that one pathway will win over the other:
+<br><br>
+
+**Factors that favor the use of context:**
+
+- The query refers to "the document" or "according to the text"
+- Contextual information is too unusual/very specific (it would be difficult to find in the parametric knowledge base)
+- Recently generated tokens in the sequence overlap significantly with the context
+<br><br>
+
+**Factors that favor the use of parametric knowledge:**
+
+- The query follows a pattern of common QA ("what is... ", "who invented...")
+- Parametric knowledge is highly confident (the model knows the correct answer)
+- The generated output has gained sufficient momentum away from the context
+<br><br>
+
+### Why It Is Important For Us
+
+This paper reinforced an important aspect: we cannot simply "increase" context attention uniformly. We need to determine when the parametric pathway is winning and then selectively intervene.
+<br><br>
+
+This is why the CRS-based classifier approach makes sense. We need to recognize the points at which the model is moving toward using the parametric knowledge and then steer it back to the use of context.
+<br><br>
+
+## Paper 3: The Attention Magnitude Problem (Jin et al., 2025)
+
+**"Massive Dot Product Values Are the Reason That Self-Attention Modules Can Understand Contextual Knowledge"**
+<br><br>
+
+This paper is more technical, but it reveals a limitation in our approach that I had never considered before.
+<br><br>
+
+### The Main Idea
+
+Most studies of attention (as well as Lookback Lens and our CRS) focus on the distribution of attention - i.e. what proportion of the attention is going to context versus generated tokens.
+<br><br>
+
+However, Jin et al. demonstrate that the actual magnitude of these attentions also matters equally.
+<br><br>
+
+In particular:
+
+- Some self-attention modules have extremely large query/key dot product values for certain context tokens
+- These "large values" are strong indicators that the model is using contextual knowledge
+- Two heads may have the same attention distribution but vastly different magnitudes
+<br><br>
+
+### Problems With Ratios
+
+Here is a concrete example they provide:
+<br><br>
+
+**Head A:**
+
+- Context Attention: .6 (60%)
+- Generated Attention: .4 (40%)
+- Max Attention Value: 2.1
+<br><br>
+
+**Head B:**
+
+- Context Attention: .6 (60%)
+- Generated Attention: .4 (40%)
+- Max Attention Value: 8.7
+<br><br>
+
+Both of the above heads have the exact same Lookback Ratio and CRS values. However, Head B is engaging more strongly than Head A with specific context tokens (i.e., the 8.7 value).
+<br><br>
+
+According to Jin et al., Head B is really working with the context, whereas Head A is merely spreading its attention around.
+<br><br>
+
+### Implications for Our Project
+
+Therefore, this is a limitation we need to acknowledge: CRS is designed to capture attention distribution but not attention magnitude.
+<br><br>
+
+We therefore may miss out on those heads that strongly interact with the specific context tokens and yet do not have a high percentage of their overall attention on context.
+<br><br>
+
+**Possible solutions:**
+
+- Add features based on magnitude to our classifier (query/key norms, max values)
+- Weight CRS by magnitude per head of attention
+- Acknowledge this limitation and clearly define the scope of our claims
+<br><br>
+
+I am therefore putting this into my "Future Work" section. For now, CRS features based on distributions are sufficient for the first iteration. However, if we have time, magnitude aware features could be quite useful.
+<br><br>
+
+## Paper 4: The Neuron Alternative (Shi et al., 2025)
+
+**"IRCAN: Mitigating Knowledge Conflicts by Identifying and Reweighting Context-Aware Neurons"**
+<br><br>
+
+This paper proposed a completely different approach from ours: instead of modulating attention heads, they identify and reweight individual neurons that encode contextual knowledge.
+<br><br>
+
+### Their Approach
+
+1. Identify "context-aware neurons" - neurons that activate strongly when the model is using context
+2. During generation, amplify these neurons' activations
+3. Result: Model relies more on context
+<br><br>
+
+### Why We Chose Attention Over Neurons
+
+We have chosen to use attention over neurons as a basis for our approach due to interpretability and efficiency.
+<br><br>
+
+Attention is inherently more interpretable than a neuron activation since you can see what the model is 'paying attention' to.
+<br><br>
+
+Additionally, we do not have to probe for neuron-level traces, we can simply read the attention weights which were computed during generation.
+<br><br>
+
+Lastly, the Lookback Lens paper and CPI theory both directly point to attention as a mechanism through which hallucination occurs. Therefore, we view neurons as a black box.
+<br><br>
+
+Although Shi et al.'s paper does show promising results (the authors state they achieve between a 15% to 20% hallucination reduction on certain benchmarks), if our attention based approach fails, then using IRCAN would be a viable alternative.
+<br><br>
+
+## Paper 5: The Scope Question (Liu et al., 2025)
+
+**"Towards Long Context Hallucination Detection"**
+<br><br>
+
+Liu et al. helped clarify the boundaries of what we are attempting to resolve.
+<br><br>
+
+### Hallucinations Taxonomy
+
+Liu et al. proposed the following taxonomy of hallucinations:
+<br><br>
+
+**1. Contextual Faithfulness Errors** ← This is what we are attempting to reduce.
+
+The output is either unsupported or contradicts the provided context.
+
+Examples:
+- Fabricated details in summarization
+- Incorrect facts in question answering
+<br><br>
+
+**2. Factual Correctness Errors**
+
+Regardless of the context, the output is factually incorrect.
+
+Examples:
+- "Paris is located in Germany."
+<br><br>
+
+**3. Temporal Hallucinations**
+
+Correct now, however the output was incorrect in the training data cutoff.
+
+Examples:
+- "The current President is...."
+<br><br>
+
+**4. Long Range Consistency Errors**
+
+The output contradicts something that was previously stated within a lengthy conversation.
+
+Examples:
+- "My favorite color is blue." → "I do not like blue."
+<br><br>
+
+### Scope
+
+Reading Liu et al.'s paper made me realize how important it is to define the specific type of hallucination that COMPASS is resolving:
+
+✅ **We are resolving:** Contextual Faithfulness Errors (Type 1)
+
+❌ **We are NOT resolving:** Type 2, 3, 4
+<br><br>
+
+This will help us avoid making unsubstantiated claims regarding the scope of our paper. We are NOT saying we are resolving "all hallucinations", we are specifically resolving context grounding failures.
+<br><br>
+
+### The Long Context Challenge
+
+Longer contexts make the challenge of detecting hallucinations more difficult (longer than 10k tokens). Liu et al. demonstrated:
+
+- Attention patterns become noisy in long contexts
+- Models may "forget" information from the beginning of the context
+- Detection accuracy decreases dramatically after 8k tokens
+<br><br>
+
+Therefore, while our method has been tested in contexts of approximately 2k tokens (HotpotQA, XSum, RAGTruth), we cannot say it will work in 100k token contexts without further testing.
+<br><br>
+
+## Synthesis: What Do These Five Papers Say?
+
+By Friday evening, I had read the five papers and spent an hour creating a large diagram on the whiteboard to connect the dots. Based upon my understanding, here is what I determined:
+<br><br>
+
+### The Problem Has Multiple Layers
+
+- **The training process causes the problem (Goyal et al.):** CPI is incorporated into the instruction fine-tuning process
+- **Models suppress instead of blending (Cheng et al.):** The decision process is a winner takes all process
+- **Attention patterns illustrate the decision (Lookback Lens, Jin et al.):** We can determine when parametric knowledge is being used to make decisions
+- **There are multiple possible intervention points (Shi et al., our work):** Attention heads, neurons, and possibly other layers
+- **The problem has limitations on its scope (Liu et al.):** We are reducing contextual faithfulness errors, not all types of hallucinations
+<br><br>
+
+### Our Contribution Within This Context
+
+These five papers all point to the same conclusion; the context versus parametric knowledge decision occurs inside the model during generation, and we can monitor the decision-making process.
+<br><br>
+
+How we differ from previous research:
+
+| Previous Research | Limitations | Our Contribution |
+|-------------------|-------------|------------------|
+| Goyal et al. | Training time solutions only | Runtime solution |
+| Cheng et al. | Descriptive (without mitigating) | Active control system |
+| Jin et al. | Observation study | Real-time modification |
+| Shi et al. (IRCAN) | Neuron level (less interpretable) | Attention level (more interpretable) |
+| Liu et al. | Detection only | Detection + Modification |
+<br><br>
+
+**Our combined contributions:** Real-time, attention-based, feedback-control during a single pass of generation.
+  `
+},
 {
   id: 'inspiration-from-one-domain-to-another',
   title: 'Inspiration From One Domain To Another',
@@ -1503,7 +2129,7 @@ Around 11 PM on July 7th, I ran the final test of the pipeline:
 <br><br>
 
 \`\`\`bash
-python calculate_crs_spans_5_teacher_5.py --dataset all --output_dir ./processed_data
+python calculate_crs_spans_5_teacher_5.py
 \`\`\`
 <br><br>
 
@@ -1518,117 +2144,16 @@ It took 8 hours to run overnight. I woke up, looked at the log:
 \`\`\`
 <br><br>
 
-It worked.
+Finally we had the training data. Now i am ready to build the classifier.
 <br><br>
 
-We had the training data.
-<br><br>
 
-Features were extracted.
-<br><br>
-
-Labels were aligned.
-<br><br>
-
-Everything was saved.
-<br><br>
-
-**Now It Was Time To Build The Classifier.**
 
 ---
 
 **Code Reference:** \`calculate_crs_spans_5_teacher_5.py\`
   `
 },
-  {
-    id: 'math-transformers',
-    title: 'The Math Behind Transformers',
-    excerpt: 'Understanding Self-Attention and Positional Encodings from first principles.',
-    date: '2024-01-05',
-    readTime: '15 min read',
-    tags: ['Math', 'Deep Learning'],
-    content: `
-# Attention is All You Need
-
-Let's look at the core equation:
-
-$$ Attention(Q, K, V) = softmax(\\frac{QK^T}{\\sqrt{d_k}})V $$
-
-The scaling factor $\\sqrt{d_k}$ is crucial for gradient stability. Without it, the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients.
-    `
-  },
-  {
-    id: 'digital-art-process',
-    title: 'My Digital Art Workflow',
-    excerpt: 'From Blender to Photoshop: A breakdown of my cyberpunk city renders.',
-    date: '2024-01-20',
-    readTime: '6 min read',
-    tags: ['Art', 'Blender', 'Design'],
-    content: `# Cyberpunk Aesthetics\n\nCreating a moody atmosphere requires careful lighting setup. I usually start with a volumetric fog pass...`
-  },
-  {
-    id: 'internship-reflections',
-    title: 'What I Learned as a Data Engineering Intern',
-    excerpt: 'Soft skills, git hygiene, and the importance of documentation.',
-    date: '2024-02-01',
-    readTime: '8 min read',
-    tags: ['Internship', 'Career'],
-    content: `# Beyond the Code\n\nThe most valuable lesson wasn't Python, it was communication. Daily standups taught me to be concise.`
-  },
-  {
-    id: 'rag-optimization-2',
-    title: 'Advanced RAG: HyDE Strategies',
-    excerpt: 'Implementing Hypothetical Document Embeddings to improve recall.',
-    date: '2023-10-20',
-    readTime: '10 min read',
-    tags: ['RAG', 'LLM'],
-    content: '# HyDE Explained\n\nHyDE generates a fake answer using an LLM, then embeds that answer to find real documents...'
-  },
-  {
-    id: 'threejs-shaders',
-    title: 'Shader Magic with GLSL',
-    excerpt: 'Writing custom fragment shaders for liquid metal effects.',
-    date: '2023-11-15',
-    readTime: '7 min read',
-    tags: ['Graphics', 'Three.js'],
-    content: '# The Power of GLSL\n\nFragment shaders run for every pixel...'
-  },
-  {
-    id: 'career-pivot',
-    title: 'From Physics to Data Science',
-    excerpt: 'How my background in academic physics helps with deep learning research.',
-    date: '2024-02-10',
-    readTime: '6 min read',
-    tags: ['Career', 'Math'],
-    content: '# Transferable Skills\n\nLinear algebra is everywhere...'
-  },
-  {
-    id: 'react-performance',
-    title: 'React Render Optimization',
-    excerpt: 'Using useMemo and useCallback effectively in large dashboards.',
-    date: '2024-02-15',
-    readTime: '9 min read',
-    tags: ['React', 'Internship'],
-    content: '# Stop Re-rendering\n\nCheck your dependency arrays!'
-  },
-  {
-    id: 'future-of-ai',
-    title: 'Agents are the Next Big Thing',
-    excerpt: 'Why autonomous agents will replace simple chatbots.',
-    date: '2024-03-01',
-    readTime: '11 min read',
-    tags: ['AI', 'Gemini'],
-    content: '# Agentic Workflows\n\nInstead of zero-shot, we give the model tools...'
-  },
-  {
-    id: 'design-systems',
-    title: 'Building a Design System from Scratch',
-    excerpt: 'Creating a consistent UI language for En Garde Data.',
-    date: '2024-03-05',
-    readTime: '8 min read',
-    tags: ['Design', 'React'],
-    content: '# Tokens and Components\n\nConsistency is key...'
-  }
 ];
 
 export const PORTFOLIO_ITEMS: PortfolioItem[] = [
