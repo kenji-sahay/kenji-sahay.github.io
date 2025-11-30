@@ -9,7 +9,7 @@ const Portfolio: React.FC = () => {
         <div className="mb-12 text-center md:text-left">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">Creative Portfolio</h1>
           <p className="text-xl text-gray-400 max-w-2xl">
-            A curated collection of my best work in digital art, film, and software development.
+            A curated collection of my best work in digital art, film, and research.
           </p>
         </div>
 
