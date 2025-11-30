@@ -1,9 +1,43 @@
-import React, { useRef, useMemo, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useRef, useMemo, Suspense, useEffect, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+
+// Custom hook to track mouse position relative to the canvas
+function useCanvasMouse() {
+  const { gl } = useThree();
+  const mouse = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    
+    const handleMouseMove = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      // Convert to normalized device coordinates (-1 to 1)
+      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    };
+
+    const handleMouseLeave = () => {
+      // Reset to center when mouse leaves
+      mouse.current.x = 0;
+      mouse.current.y = 0;
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [gl]);
+
+  return mouse;
+}
 
 function ParticleField() {
   const ref = useRef<THREE.Points>(null!);
+  const mouse = useCanvasMouse();
   const particleCount = 1200;
   
   const [positions, originalPositions] = useMemo(() => {
@@ -32,7 +66,7 @@ function ParticleField() {
   useFrame((state) => {
     if (!ref.current) return;
     
-    const { pointer, clock } = state;
+    const { clock } = state;
     const time = clock.getElapsedTime();
     
     ref.current.rotation.y = time * 0.05;
@@ -46,8 +80,9 @@ function ParticleField() {
 
     const positionsArray = positionAttribute.array as Float32Array;
     
-    const mouseX = pointer.x * 6;
-    const mouseY = pointer.y * 6;
+    // Use our custom mouse tracking - scale to match 3D space
+    const mouseX = mouse.current.x * 6;
+    const mouseY = mouse.current.y * 4;
 
     for (let i = 0; i < particleCount; i++) {
       const ix = i * 3;
@@ -61,20 +96,23 @@ function ParticleField() {
       const waveX = Math.sin(time * 0.5 + oy * 0.5) * 0.2;
       const waveY = Math.cos(time * 0.3 + ox * 0.5) * 0.2;
       
+      // Calculate distance from mouse in screen-projected space
       const dx = positionsArray[ix] - mouseX;
       const dy = positionsArray[iy] - mouseY;
-      const dist = Math.sqrt(dx*dx + dy*dy);
+      const dist = Math.sqrt(dx * dx + dy * dy);
       
-      const force = Math.max(0, 2 - dist);
+      // Repulsion force - particles push away from cursor
+      const force = Math.max(0, 2.5 - dist) * 0.8;
       const angle = Math.atan2(dy, dx);
       
-      const targetX = ox + waveX + (Math.cos(angle) * force * 0.5);
-      const targetY = oy + waveY + (Math.sin(angle) * force * 0.5);
+      const targetX = ox + waveX + (Math.cos(angle) * force);
+      const targetY = oy + waveY + (Math.sin(angle) * force);
       const targetZ = oz;
 
-      positionsArray[ix] += (targetX - positionsArray[ix]) * 0.1;
-      positionsArray[iy] += (targetY - positionsArray[iy]) * 0.1;
-      positionsArray[iz] += (targetZ - positionsArray[iz]) * 0.1;
+      // Smooth interpolation back to target position
+      positionsArray[ix] += (targetX - positionsArray[ix]) * 0.08;
+      positionsArray[iy] += (targetY - positionsArray[iy]) * 0.08;
+      positionsArray[iz] += (targetZ - positionsArray[iz]) * 0.08;
     }
     
     positionAttribute.needsUpdate = true;
@@ -111,9 +149,9 @@ const HeroFallback: React.FC = () => (
 );
 
 const ThreeHero: React.FC = () => {
-  const [webGLSupported, setWebGLSupported] = React.useState(true);
+  const [webGLSupported, setWebGLSupported] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Check WebGL support
     try {
       const canvas = document.createElement('canvas');
