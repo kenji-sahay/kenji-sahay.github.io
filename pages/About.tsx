@@ -25,9 +25,8 @@ const About: React.FC = () => {
             
             <div className="prose-custom text-lg text-gray-300 space-y-6">
               <p>
-                I am a technologist sitting at the intersection of <strong>Machine Learning</strong> and <strong>Interaction Design</strong>. 
-                Currently, I specialize in optimizing Retrieval-Augmented Generation (RAG) pipelines for large-scale enterprise applications, 
-                ensuring that AI is not just smart, but fast and reliable.
+                I am a student sitting at the intersection of <strong>Machine Learning</strong> and <strong>Digital Art</strong>. 
+                Currently, I am researching and working on making LLMs more reliable and safe.
               </p>
               
               <p>
