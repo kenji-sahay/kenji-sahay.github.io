@@ -15,7 +15,7 @@ const Contact: React.FC = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase">Email</p>
-              <a href="mailto:hello@engarde.data" className="hover:text-white transition-colors">hello@engarde.data</a>
+              <a href="mailto:kenjisahay26@gmail.com" className="hover:text-white transition-colors">kenjisahay26@gmail.com</a>
             </div>
           </div>
           
@@ -25,7 +25,7 @@ const Contact: React.FC = () => {
             </div>
              <div>
               <p className="text-xs text-gray-500 uppercase">Location</p>
-              <span>San Francisco, CA (Open to Remote)</span>
+              <span>Wilton, CT</span>
             </div>
           </div>
         </div>
