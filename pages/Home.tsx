@@ -66,7 +66,7 @@ const Home: React.FC = () => {
         <div className="max-w-3xl mx-auto">
           <h2 className="text-4xl font-bold text-white mb-6">Bridging <span className="text-brand-accent">Art</span> & <span className="text-brand-primary">Algorithms</span></h2>
           <p className="text-xl text-gray-400 mb-10 leading-relaxed">
-            I'm a Data Scientist obsessed with visual storytelling. Whether it's optimizing vector search for enterprise RAG systems or simulating physics in Blender, I build things that are both functional and beautiful.
+            I'm a highschool student who is interested in Data Science/ML obsessed with visual storytelling. I love to make digital art and also research LLMs!
           </p>
           <Link to="/about" className="inline-block bg-white text-slate-900 px-8 py-4 rounded-full font-bold hover:bg-brand-glow hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]">
             More About Me
