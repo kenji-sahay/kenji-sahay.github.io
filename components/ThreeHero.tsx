@@ -2,23 +2,26 @@ import React, { useRef, useMemo, Suspense, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// Custom hook to track mouse position relative to the canvas
-function useCanvasMouse() {
-  const { gl } = useThree();
+function ParticleField() {
+  const ref = useRef<THREE.Points>(null!);
   const mouse = useRef({ x: 0, y: 0 });
+  const mouseWorld = useRef(new THREE.Vector3());
+  const mouseLocal = useRef(new THREE.Vector3());
+  const inverseMatrix = useRef(new THREE.Matrix4());
+  const { camera, gl } = useThree();
+  const particleCount = 1200;
 
+  // Set up mouse tracking
   useEffect(() => {
     const canvas = gl.domElement;
     
     const handleMouseMove = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-      // Convert to normalized device coordinates (-1 to 1)
       mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
 
     const handleMouseLeave = () => {
-      // Reset to center when mouse leaves
       mouse.current.x = 0;
       mouse.current.y = 0;
     };
@@ -31,14 +34,6 @@ function useCanvasMouse() {
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [gl]);
-
-  return mouse;
-}
-
-function ParticleField() {
-  const ref = useRef<THREE.Points>(null!);
-  const mouse = useCanvasMouse();
-  const particleCount = 1200;
   
   const [positions, originalPositions] = useMemo(() => {
     const pos = new Float32Array(particleCount * 3);
@@ -69,6 +64,7 @@ function ParticleField() {
     const { clock } = state;
     const time = clock.getElapsedTime();
     
+    // Rotate the particle system
     ref.current.rotation.y = time * 0.05;
     ref.current.rotation.x = Math.sin(time * 0.1) * 0.1;
 
@@ -80,9 +76,26 @@ function ParticleField() {
 
     const positionsArray = positionAttribute.array as Float32Array;
     
-    // Use our custom mouse tracking - scale to match 3D space
-    const mouseX = mouse.current.x * 6;
-    const mouseY = mouse.current.y * 4;
+    // Unproject mouse to 3D world space at z=0 plane
+    mouseWorld.current.set(mouse.current.x, mouse.current.y, 0.5);
+    mouseWorld.current.unproject(camera);
+    
+    // Get direction from camera to unprojected point
+    const dir = mouseWorld.current.sub(camera.position).normalize();
+    
+    // Find intersection with z=0 plane (approximate center of particle sphere)
+    const distance = -camera.position.z / dir.z;
+    mouseWorld.current.copy(camera.position).add(dir.multiplyScalar(distance));
+    
+    // Transform mouse position to LOCAL space of the rotating particle group
+    // This is the key fix - we need to account for the rotation
+    ref.current.updateMatrixWorld();
+    inverseMatrix.current.copy(ref.current.matrixWorld).invert();
+    mouseLocal.current.copy(mouseWorld.current).applyMatrix4(inverseMatrix.current);
+
+    const localMouseX = mouseLocal.current.x;
+    const localMouseY = mouseLocal.current.y;
+    const localMouseZ = mouseLocal.current.z;
 
     for (let i = 0; i < particleCount; i++) {
       const ix = i * 3;
@@ -96,20 +109,23 @@ function ParticleField() {
       const waveX = Math.sin(time * 0.5 + oy * 0.5) * 0.2;
       const waveY = Math.cos(time * 0.3 + ox * 0.5) * 0.2;
       
-      // Calculate distance from mouse in screen-projected space
-      const dx = positionsArray[ix] - mouseX;
-      const dy = positionsArray[iy] - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Calculate 3D distance from mouse in LOCAL space
+      const dx = positionsArray[ix] - localMouseX;
+      const dy = positionsArray[iy] - localMouseY;
+      const dz = positionsArray[iz] - localMouseZ;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       
-      // Repulsion force - particles push away from cursor
-      const force = Math.max(0, 2.5 - dist) * 0.8;
-      const angle = Math.atan2(dy, dx);
+      // Repulsion force - particles push away from cursor in 3D
+      const force = Math.max(0, 3 - dist) * 0.6;
       
-      const targetX = ox + waveX + (Math.cos(angle) * force);
-      const targetY = oy + waveY + (Math.sin(angle) * force);
-      const targetZ = oz;
+      // Normalize direction and apply force
+      const invDist = dist > 0.001 ? 1 / dist : 0;
+      
+      const targetX = ox + waveX + (dx * invDist * force);
+      const targetY = oy + waveY + (dy * invDist * force);
+      const targetZ = oz + (dz * invDist * force);
 
-      // Smooth interpolation back to target position
+      // Smooth interpolation
       positionsArray[ix] += (targetX - positionsArray[ix]) * 0.08;
       positionsArray[iy] += (targetY - positionsArray[iy]) * 0.08;
       positionsArray[iz] += (targetZ - positionsArray[iz]) * 0.08;
@@ -119,27 +135,25 @@ function ParticleField() {
   });
 
   return (
-    <group rotation={[0, 0, 0]}>
-      <points ref={ref}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={particleCount}
-            array={positions}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          transparent
-          color="#3b82f6"
-          size={0.06}
-          sizeAttenuation={true}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          opacity={0.8}
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={particleCount}
+          array={positions}
+          itemSize={3}
         />
-      </points>
-    </group>
+      </bufferGeometry>
+      <pointsMaterial
+        transparent
+        color="#3b82f6"
+        size={0.06}
+        sizeAttenuation={true}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        opacity={0.8}
+      />
+    </points>
   );
 }
 
@@ -152,7 +166,6 @@ const ThreeHero: React.FC = () => {
   const [webGLSupported, setWebGLSupported] = useState(true);
 
   useEffect(() => {
-    // Check WebGL support
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
