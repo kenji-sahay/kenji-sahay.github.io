@@ -199,7 +199,7 @@ The brilliance behind their method is that they compute this for every head and 
 
 ## From Detection To Classification
 
-They do not just compute these ratios; rather, they use them as features for a classifier.
+They do not just compute these ratios. Insteda, they use them as features for a classifier.
 <br><br>
 
 For a range of text (e.g., a single sentence in a summary), they:
@@ -209,13 +209,13 @@ For a range of text (e.g., a single sentence in a summary), they:
 3. Use the resulting 1,024 dimensional vector as input to a simple logistic regression classifier
 <br><br>
 
-That's it. No complex neural networks, no sophisticated architectures. Just a simple linear classifier examining the patterns of attention in the model.
+That is it. No complex neural networks, no sophisticated architectures. Just a simple linear classifier examining the patterns of attention in the model.
 <br><br>
 
 **Results?**
 <br><br>
 
-AUROC of 85-91% for detecting hallucinations across multiple tasks. That's competitive with or better than:
+AUROC of 85-91% for detecting hallucinations across multiple tasks. That is competitive with or better than:
 
 - Text-based NLI models trained on 731k examples
 - Hidden state-based detectors that use the model's internal representation
@@ -229,7 +229,7 @@ There are three things that make this approach unique:
 
 ### 1. Interpretability
 
-You can see exactly what's going on. If the model is hallucinating, you can visually inspect which heads are not focusing on the context. It is not a black-box system.
+You can see exactly what is going on. If the model is hallucinating, you can visually inspect which heads are not focusing on the context. It is not a black-box system.
 <br><br>
 
 The authors of the paper demonstrate this nice visualization (Figure 5 in their appendix) showing that the positive heads (heads that are positively correlated with factuality) show significantly lower Lookback Ratios during hallucinated text. In essence, you can literally observe the model stop paying attention to the source.
@@ -800,7 +800,7 @@ Once my initial anxiety subsided, I actually read the paper thoroughly. And I fo
 Vision-language models (VLMs) take an image as their input and create text about it — captions, answers to questions, descriptions. They also hallucinate. A lot.
 <br><br>
 
-Here's a typical failure:
+Here is a typical failure:
 <br><br>
 
 **Input:** An image of a living room with a couch, coffee table and lamp
@@ -831,7 +831,7 @@ What Arif et al. discovered is that vision-language hallucinations follow the ex
 - Result: Hallucinations disconnected from the provided image
 <br><br>
 
-It's the same mechanism, just with images rather than text context.
+It is the same mechanism, just with images rather than text context.
 <br><br>
 
 ## The Attention Drift Across Layers
@@ -942,7 +942,7 @@ They compared their selective approach against PAI ("Paying More Attention to Im
 
 ### 3. The Sweet Spot for Amplification
 
-Through extensive ablation studies, they found optimal amplification factors. Too little amplification (α = 0.1-0.5) doesn't reduce hallucinations enough. Too much (α = 0.9) destroys model performance entirely. There's a sweet spot around α = 0.7 and β = 0.4 where hallucination reduction is maximized while maintaining reasonable generation quality.
+Through extensive ablation studies, they found optimal amplification factors. Too little amplification (α = 0.1-0.5) doesn't reduce hallucinations enough. Too much (α = 0.9) destroys model performance entirely. There is a sweet spot around α = 0.7 and β = 0.4 where hallucination reduction is maximized while maintaining reasonable generation quality.
 <br><br>
 
 ### 4. Token Selection Percentage Matters
@@ -952,12 +952,12 @@ They tested different percentages of local tokens to amplify (10%, 15%, 20%, 25%
 
 ### 5. The Trade-Off Is Real
 
-Their results show a consistent pattern: as hallucination decreases, F1 score also decreases slightly (from 75.9% to 71.8% in their base method). This validates our intuition that there's an inherent trade-off between groundedness and fluency that we'll need to carefully balance.
+Their results show a consistent pattern: as hallucination decreases, F1 score also decreases slightly (from 75.9% to 71.8% in their base method). This validates our intuition that there is an inherent trade-off between groundedness and fluency that we'll need to carefully balance.
 <br><br>
 
 ## One Important Difference: Static vs. Dynamic
 
-While Arif et al.'s work is groundbreaking, there's one key area where we can build upon it:
+While Arif et al.'s work is groundbreaking, there is one key area where we can build upon it:
 <br><br>
 
 **Their approach is largely static:**
@@ -988,7 +988,7 @@ What I learned from this "accidental" finding:
 
 ### 1. The Problem is Fundamental to Transformers
 
-Attention drift isn't specific to text or vision. It's a fundamental failure mode of the transformer architecture when balancing evidence (context/image) against priors (parametric knowledge/language patterns).
+Attention drift isn't specific to text or vision. It is a fundamental failure mode of the transformer architecture when balancing evidence (context/image) against priors (parametric knowledge/language patterns).
 <br><br>
 
 ### 2. The Solution is Transferable
@@ -1110,7 +1110,7 @@ This is the part where I was going to learn if my method was actually implementa
 
 ## The GPU Situation
 
-Here's the thing about doing LLM/ML research in high school: You don't have your own compute cluster. You can't just walk down the hall to the CS department and ask for GPU time.
+Here's the thing about doing LLM/ML research in high school: You don't have your own compute cluster. You cannot just walk down the hall to the CS department and ask for GPU time.
 <br><br>
 
 Fortunately, our research program hooked us up with RunPod credits.
@@ -1357,7 +1357,7 @@ pip install -r requirements.txt
 \`\`\`
 <br><br>
 
-Then I got a bunch of error spam. There was version conflicts everywhere. Some packages aren't compatible with the exact sub-dependency versions pip froze.
+Then I got a bunch of error spam. There was version conflicts everywhere. Some packages are not compatible with the exact sub-dependency versions pip froze.
 <br><br>
 
 Lesson learned: Manually maintain requirements.txt with only top-level dependencies and loose version constraints:
@@ -1489,7 +1489,7 @@ tmux attach -t compass
 This was a game-changer. I could start a 12-hour training run, close my laptop, go to sleep, and check results in the morning.
 <br><br>
 
-This was especially important because I couldn't just leave my laptop open all day, I had to go to school!
+This was especially important because I could not just leave my laptop open all day, I had to go to school!
 <br><br>
 
 ## The README Template
@@ -1572,7 +1572,7 @@ With limited RunPod credits, I learned to:
 
 - Terminate pods when not actively using them
 - Use smaller models for debugging (test on distilgpt2 before running on LLaMA-2)
-- Cache downloaded models so I don't re-download them every time
+- Cache downloaded models so I do not re-download them every time
 - Monitor GPU utilization to make sure I'm actually using the compute I'm paying for
 <br><br>
 
@@ -1589,7 +1589,7 @@ By the end of Day 2, I had:
 - Credit-conscious habits in place
 <br><br>
 
-It's not glamorous. It won't go in the paper. But without this foundation, nothing else would have been possible.
+It's not something that is very fun. It won't go in the paper. But without this foundation, the paper would not have been possible.
 <br><br>
 
 Now I could finally start writing actual research code.
@@ -2102,7 +2102,7 @@ Gemini 2.5-Flash provided us with approximately 93% agreement with human-labeled
 
 ### 2. Token Alignment Is Far More Difficult Than It Appears
 
-Tokenization discrepancies between generation and labeling caused me constant difficulties. My smart alignment heuristics saved my bacon.
+Tokenization discrepancies between generation and labeling caused me constant difficulties. 
 <br><br>
 
 ### 3. Causal Features Only
