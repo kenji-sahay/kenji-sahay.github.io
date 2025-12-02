@@ -2158,11 +2158,12 @@ Finally we had the training data. Now i am ready to build the classifier.
 
 export const PORTFOLIO_ITEMS: PortfolioItem[] = [
   {
-    id: 'neon-dreams',
-    title: 'Neon Dreams',
-    description: 'A 3D short film exploring a futuristic Tokyo.',
+    id: 'nuclear-proliferation-doc',
+    title: 'Nuclear Proliferation Documentary',
+    description: '0:00 - 3:20 was produced by me. Credit for Mick Hamilton and Ben Shrivastiva for helping with this project as well.',
     type: 'Film',
-    image: 'https://picsum.photos/600/600?random=1'
+    image: 'https://img.youtube.com/vi/k3Z3wUb1CLo/maxresdefault.jpg',
+    link: 'https://www.youtube.com/watch?v=k3Z3wUb1CLo'
   },
   {
     id: 'data-viz-dash',
