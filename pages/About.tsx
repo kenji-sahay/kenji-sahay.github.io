@@ -9,7 +9,7 @@ const About: React.FC = () => {
           {/* Profile Image */}
           <div className="w-full md:w-1/3 sticky top-24">
              <div className="aspect-square rounded-2xl overflow-hidden bg-slate-800 border-2 border-brand-primary/30 shadow-2xl shadow-brand-primary/10 mb-6">
-               <img src="https://picsum.photos/800/800?grayscale" alt="Profile" className="w-full h-full object-cover" />
+               <img src="" alt="Profile" className="w-full h-full object-cover" />
              </div>
              <div className="flex justify-center space-x-6 text-gray-400">
                <a href="#" className="hover:text-white transition-colors"><Github size={24} /></a>
