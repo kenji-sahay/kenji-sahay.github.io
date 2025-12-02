@@ -24,9 +24,16 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ item }) => {
           <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
           <p className="text-gray-300 text-sm mb-4">{item.description}</p>
           
-          <button className="flex items-center gap-2 text-white border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm backdrop-blur-sm transition-colors">
-            View Project <ExternalLink size={14} />
-          </button>
+          {item.link && (
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-white border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm backdrop-blur-sm transition-colors w-fit"
+            >
+              View Project <ExternalLink size={14} />
+            </a>
+          )}
         </div>
       </div>
     </div>
