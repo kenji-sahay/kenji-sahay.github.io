@@ -9,7 +9,6 @@ import Portfolio from './pages/Portfolio';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Search from './pages/Search';
-import GeminiChat from './components/GeminiChat';
 
 // Error Boundary to catch rendering errors
 class ErrorBoundary extends React.Component<
@@ -83,7 +82,6 @@ const App: React.FC = () => {
             </Routes>
           </main>
           <Footer />
-          <GeminiChat />
         </div>
       </Router>
     </ErrorBoundary>
