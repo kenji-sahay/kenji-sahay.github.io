@@ -406,7 +406,7 @@ This paper transformed everything for me.
 Although instruction fine-tuning (IFT) seems to help early on for models to follow context, eventually the models will revert back to disregarding context — while continuing to get better on the traditional benchmarks.
 <br><br>
 
-Let me break down that statement because it is a little crazy:
+Let me break it down:
 
 - **Initial phase of training:** Models begin to focus on the context
 - **Peak phase of training:** Models reach their highest point of adhering to context
@@ -414,19 +414,19 @@ Let me break down that statement because it is a little crazy:
 - **Benchmark results continue to grow throughout the entire process!**
 <br><br>
 
-Goyal et al. term this phenomenon **Context-Parametric Inversion (CPI)**.
+Goyal et al. call this phenomenon **Context-Parametric Inversion (CPI)**.
 <br><br>
 
 ### The "Lazy Good Student" Analogy
 
-Yesterday I spent all day explaining CPI to Anna, and I believe I finally came up with a good analogy:
+Yesterday I spent all day explaining CPI to my group, and I believe I finally came up with a good analogy:
 <br><br>
 
 Think of a student who:
 
 - **First part of the semester:** Reads all of the course material, checks the answers against the resources that were given to them
 - **Middle part of the semester:** Has done well on the exams, however is starting to rely on the things he or she remembers from class more and more
-- **End of the semester:** Has received a better grade than ever before on the exams, however, no longer uses the readings — even though the reading can be used to find the answer if it is open book and the answer is clearly stated
+- **End of the semester:** Has received a better grade than ever before on the exams, however, no longer uses the readings, even though the reading can be used to find the answer if it is open book and the answer is clearly stated
 <br><br>
 
 The student's grades on the exams continue to go up (traditional benchmarks); however, the student is no longer using the materials (the context). The student has figured out the patterns of how answers appear to be; however, the student has lost the discipline of making sure that answers are based on evidence.
