@@ -2165,39 +2165,4 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
     image: 'https://img.youtube.com/vi/k3Z3wUb1CLo/maxresdefault.jpg',
     link: 'https://www.youtube.com/watch?v=k3Z3wUb1CLo'
   },
-  {
-    id: 'data-viz-dash',
-    title: 'Market Sentinel',
-    description: 'Real-time stock market visualization dashboard using D3.js.',
-    type: 'Code',
-    image: 'https://picsum.photos/600/600?random=2'
-  },
-  {
-    id: 'abs-glitch',
-    title: 'Abstract Glitch Series',
-    description: 'Generative art collection created with p5.js.',
-    type: 'Art',
-    image: 'https://picsum.photos/600/600?random=3'
-  },
-  {
-    id: 'brand-identity',
-    title: 'En Garde Identity',
-    description: 'Complete brand overhaul and logo design.',
-    type: 'Design',
-    image: 'https://picsum.photos/600/600?random=4'
-  },
-  {
-    id: 'llm-chat-ui',
-    title: 'ChatStream UI',
-    description: 'A React component library for streaming LLM responses.',
-    type: 'Code',
-    image: 'https://picsum.photos/600/600?random=5'
-  },
-  {
-    id: 'forest-render',
-    title: 'The Silent Forest',
-    description: 'Photorealistic nature render in Unreal Engine 5.',
-    type: 'Art',
-    image: 'https://picsum.photos/600/600?random=6'
-  }
 ];
