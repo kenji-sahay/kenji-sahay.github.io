@@ -2198,5 +2198,13 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
     description: 'Photorealistic nature render in Unreal Engine 5.',
     type: 'Art',
     image: 'https://picsum.photos/600/600?random=6'
+  },
+  {
+    id: 'nuclear-proliferation-doc',
+    title: 'Nuclear Proliferation Documentary',
+    description: '0:00 - 3:20 was produced by me. Credit for Mick Hamilton and Ben Shrivastiva for helping with this project as well.',
+    type: 'Film',
+    image: 'https://img.youtube.com/vi/k3Z3wUb1CLo/maxresdefault.jpg',
+    link: 'https://www.youtube.com/watch?v=k3Z3wUb1CLo'
   }
 ];
